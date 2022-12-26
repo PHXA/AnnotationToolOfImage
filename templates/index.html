@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+
+<html>
+
+    <head>
+        <script src="https://cdn.jsdelivr.net/npm/vue@2.7.11/dist/vue.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    </head>
+    <body>
+        <div id="app">
+            <div id="handp">
+                <div id="header">
+                    <div id="label_name">
+                        <input id="label_input" v-model="label_name" placeholder="category_label">
+                        <button id="label_btn" type="button" @click="label_save" class="btn btn-danger">lock</button>
+                        <button id="save_btn" type="button" @click="()=>{save(),Reset()}" class="btn btn-success">save</button>
+                        <button id="reset_btn" type="button" @click="Reset" class="btn btn-warning">Reset</button>
+                    </div>
+                </div>
+                <div id="progress_w"><div id="progress"></div></div>
+            </div>
+            <div id="contents">
+                <div id="main-contents">
+                    <div class="items" v-for="i in items">
+                        <img :id="i">
+                        <canvas :id="i">
+                    </div>
+                    <div id="next">
+                        <div @click="pre" id="pre_button">
+                            <div id="pre_label">⇦</div>
+                        </div>
+                        <div @click="next" id="next_button">
+                            <div id="next_label">⇨</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="footer"></div>
+        </div>
+    </body>
+    
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        .items{
+            position: relative;
+            /* height: auto; */
+            margin: 10px;
+            border: solid black 1px;
+            /* padding: 10px; */
+        }
+        .items > img{
+            width: 100%;
+            user-select: none;
+            height: auto;
+        }
+        canvas{
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #app, body{
+            height: 100vh;
+            width: 100%;
+        }
+        #header{
+            width: 100%;
+            height: 50px;
+            background-color: #4da0fe;
+        }
+        #main-contents{
+            border: solid black 1px;
+            height: 100%;
+            margin: 0 auto;
+            width: 600px;
+        }
+        #contents{
+            min-height: calc(100vh - 50px - 150px - 40px);
+            background-color: #ffe7e7;
+            padding: 20px;
+            padding-top: 77px;
+        }
+        #next{
+            /* float: right; */
+            height: 90px;
+            padding: 20px;
+        }
+        #next_button:hover{
+            background-color: rgb(236, 255, 199);
+        }
+        #next_button{
+            position: relative;
+            border-radius: 100px;
+            border: 1px solid black;
+            height: 50px;
+            width: 50px;
+            cursor: pointer;
+            background-color: rgb(173, 254, 10);
+            float: right;
+        }
+        #next_label{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        #pre_button:hover{
+            background-color: rgb(236, 255, 199);
+        }
+        #pre_button{
+            position: relative;
+            border-radius: 100px;
+            border: 1px solid black;
+            height: 50px;
+            width: 50px;
+            cursor: pointer;
+            background-color: rgb(173, 254, 10);
+            float: left;
+        }
+        #pre_label{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        #footer{
+            width: 100%;
+            height: 150px;
+            background-color: rgb(101, 132, 158)
+        }
+        #handp{
+            z-index: 10;
+            width: 100%;
+            left: 0;
+            position: fixed;
+            top: 0;
+        }
+        #progress{
+            width: 100%;
+            height: 7px;
+            background-color: #08ff00;
+        }
+        #progress_w{
+            width: 100%;
+            height: 7px;
+            z-index: 10;
+            background-color: white;
+        }
+        .fixed {
+            left: 0;
+            /* width: 100%; */
+            position: fixed;
+            top: 0;
+        }
+        #label_name{
+            text-align: center;
+            padding: 5px;
+            display: flex;
+            justify-content: center;
+            height: 100%;
+        }
+        #label_name > textarea, #label_btn, #save_btn, #reset_btn{
+            height: 100%;
+        }
+        #label_btn, #save_btn, #reset_btn{
+            margin-left: 10px;
+        }
+    </style>
+
+    <script>
+        new Vue({
+            el: "#app",
+            data() {
+                return {
+                    items: [],
+                    Img_dic: [],
+                    context: {},
+                    label_name: "",
+                    canvas_dom: {},
+                    pre_id: [],
+                    f: true,
+                    cursol: 0,
+                    max_cursol: false,
+                    obj: [],
+                    id2points: {},
+                    max_img_n: "",
+                }
+            },
+            mounted() {
+                window.onload = () => {
+                    this.setImg();
+                    // window.addEventListener('scroll',this.scroolEvent);
+                    setTimeout(this.createCvs,100)
+                }
+            },
+            beforeUpdate(){
+                
+            },
+            updated(){
+                
+            },
+            methods: {
+                createCvs(){
+                    canvas_target = document.getElementsByTagName("canvas");
+                    for(let e of canvas_target){
+                        this.setDom(e)
+                    }
+                    window.addEventListener('resize', this.handleResize);
+                    document.addEventListener('keydown', this.keyDown);
+                    for(let i in this.Img_dic){
+                        document.getElementById(String(i)).src = "data:image/jpg;base64,"+this.Img_dic[i];
+                    };
+                    if(this.f){
+                        setTimeout(this.fixHW,10);
+                        this.f = false;
+                    }
+                },
+                label_save(){
+                    dom = document.getElementById("label_input")
+                    dom.readOnly = !dom.readOnly;
+                    if(dom.readOnly==true){
+                        dom.style.backgroundColor = "#d0d0d0";
+                        document.getElementById("label_btn").innerText = "unlock";
+                    }else{
+                        dom.style.backgroundColor = "white";
+                        document.getElementById("label_btn").innerText = "lock";
+                    }
+                },
+                fixHW(){
+                    for(let i in this.Img_dic){
+                        i = document.getElementById(String(i))
+                        w = i.clientWidth
+                        h = i.clientHeight
+                        i.parentElement.style.width = w+"px";
+                        i.parentElement.style.height = h+"px";
+                    }
+                    this.handleResize();
+                },
+                async setImg(){
+                    var obj = await this.getImg();
+                    if(0==Object.keys(obj["data"]).length){
+                        this.max_cursol = true
+                    }
+                    console.log(obj)
+                    this.obj = obj;
+                    this.Img_dic = {};
+                    this.items = [];
+                    for(let i in obj["data"]){
+                        this.Img_dic[obj["data"][i]["link"]] = obj["data"][i]["img"];
+                    }
+                    for(let i in this.Img_dic){
+                        if(this.Img_dic[i]){
+                            this.items.push(i)
+                        }
+                    }
+                    this.max_img_n = obj["max"];
+                    document.getElementById("progress").style.width = String(100*(1+this.cursol)*10/obj["max"])+"%";
+                },
+                async save(){
+                    canvas = document.getElementsByTagName("canvas");
+                    link2img = {};
+                    for(let i of canvas){
+                        img_id = i.id.split("\t")[0]
+                        points = this.id2points[i.id]
+                        if(points){
+                            points["label"]=this.label_name;
+                            if(!link2img[img_id]){
+                                link2img[img_id] = {};
+                                link2img[img_id][0] = points;
+                            }else{
+                                len = Object.keys(link2img[img_id]).length;
+                                link2img[img_id][len] = points;
+                            }
+                        }
+                    }
+                    const res = await fetch(
+                        "{{ env.HOST }}/save",
+                        {
+                            method:"POST",
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+                            body: JSON.stringify(link2img)
+                        }
+                    );
+                    const data = await res.json();
+                    console.log(data)
+                    return data
+                },
+                async next(){
+                    if(!this.max_cursol){
+                        this.cursol += 1;
+                    }else{
+                        return
+                    }
+                    this.save();  
+                    this.Img_dic = {};
+                    this.items = [];
+                    this.f = true;   
+                    this.setImg();
+                    setTimeout(this.createCvs,100);
+                    // this.createCvs();
+                },
+                async pre(){
+                    if(this.max_cursol){
+                        this.max_cursol = false;
+                    }
+                    if(this.cursol==0){
+                        return
+                    }
+                    this.cursol -= 1;
+                    this.save();
+                    this.Img_dic = {};
+                    this.items = [];
+                    this.f = true;
+                    this.setImg();
+                    setTimeout(this.createCvs,100);
+                    // this.createCvs();
+                },
+                async getImg(){
+                    const res = await fetch(
+                        "{{ env.HOST }}/getImg?c="+String(this.cursol),
+                        {
+                            method:"GET",
+                            headers:{
+                                "Content-Type":"application/json"
+                            },
+                        }
+                    );
+                    const data = await res.json();
+                    return data
+                },
+                Reset(){
+                    while(this.pre_id.length!=0){    
+                        pre = this.pre_id.slice(-1)[0];
+                        this.remove(pre);
+                        this.pre_id.pop();
+                    }
+                },
+                deletePoints(e){
+                    if(this.pre_id.length!=0){    
+                        pre = this.pre_id.slice(-1)[0];
+                        if(e.ctrlKey && "z" == e.key && pre!=""){
+                            this.remove(pre);
+                            this.pre_id.pop();
+                        }
+                    }
+                },
+                keyDown(e){
+                    this.deletePoints(e)
+                    if(e.ctrlKey){
+                        if("ArrowLeft" == e.key){
+                            this.pre()
+                        }
+                    }
+                    if(e.ctrlKey){
+                        if("ArrowRight" == e.key){
+                            this.next()
+                        }
+                    }
+                },
+                handleResize(e=0){
+                    if(e!=0){
+                        w = e.parentElement.clientWidth;
+                        h = e.parentElement.clientHeight;
+                        e.setAttribute("width",String(w)+"px");
+                        e.setAttribute("height",String(h)+"px");
+                    }else{
+                        for(let key in this.canvas_dom){
+                            var e = this.canvas_dom[key]
+                            w = e.parentElement.clientWidth;
+                            h = e.parentElement.clientHeight;
+                            e.setAttribute("width",String(w)+"px");
+                            e.setAttribute("height",String(h)+"px");
+                        }
+                    }
+                },
+                scroolEvent(){
+                    if(window.scrollY >=57){
+                        document.getElementById("handp").classList.add("fixed");
+                    }else{
+                        document.getElementById("handp").classList.remove("fixed");
+                    }
+                },
+                onMounseDown(e){
+                    var id = e.target.id;
+                    this.context[id].beginPath();
+                    this.context[id].strokeStyle=1;
+                    this.context[id].lineWidth=1;
+                    xy = this.getXY(e);
+                    x = xy[0];
+                    y = xy[1];
+                    this.canvas_dom[id].addEventListener('mousemove',this.onMounseMove,false);
+                    this.setPreXY(x,y);
+                    this.id2points[id] = {
+                        "x1":x,
+                        "y1":y,
+                    }
+                },
+                onMounseMove(e){
+                    // console.log(e.target.id)
+                    var id = e.target.id;
+                    var ct = this.context[id];
+                    ct.clearRect(0, 0, ct.canvas.width, ct.canvas.height);
+                    ct.beginPath();
+                    ct.strokeStyle="red";
+                    ct.lineWidth=2;
+                    xy = this.getXY(e);
+                    x = xy[0];
+                    y = xy[1];
+                    ct.rect(this.pre_x,this.pre_y,x-this.pre_x,y-this.pre_y)
+                    ct.stroke();
+                },
+                onMounseUp(e){
+                    var id = e.target.id;
+                    this.canvas_dom[id].removeEventListener('mousemove',this.onMounseMove,false);
+                    var new_dom = document.createElement('canvas')
+                    this.setWH(new_dom);
+                    new_dom.id = id+"\t"+Math.random().toString(32).substring(2);
+                    var parent = this.canvas_dom[id].parentElement;
+                    parent.appendChild(new_dom)
+                    this.pre_id.push(id);
+                    this.setDom(new_dom);
+                    this.handleResize(new_dom);
+                    xy = this.getXY(e);
+                    x = xy[0];
+                    y = xy[1];
+                    this.id2points[id]["x2"]=x;
+                    this.id2points[id]["y2"]=y;
+                },
+                setDom(e){
+                    this.canvas_dom[e.id] = e;
+                    this.context[e.id] = e.getContext('2d');
+                    e.addEventListener('mousedown',this.onMounseDown,false);
+                    e.addEventListener('mouseup',this.onMounseUp,false);
+                },
+                remove(id){
+                    var e = this.canvas_dom[id];
+                    this.canvas_dom[id].remove();
+                    delete this.canvas_dom[id];
+                    delete this.context[id];
+                    e.removeEventListener('mousedown',this.onMounseDown,false);
+                    e.removeEventListener('mouseup',this.onMounseUp,false);
+                },
+                setWH(e){
+                    w = e.clientWidth;
+                    h = e.clientHeight;
+                    e.setAttribute("width",String(w)+"px");
+                    e.setAttribute("height",String(h)+"px");
+                },
+                onClick(e){
+                    xy = this.getXY(e);
+                    x = xy[0];
+                    y = xy[1];
+                    this.context.fillRect(x, y, 10, 10);
+                },
+                getXY(e){
+                    var rect = e.target.getBoundingClientRect();
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                    return [x,y]
+                },
+                setPreXY(x,y){
+                    this.pre_x = x;
+                    this.pre_y = y;
+                }
+            },
+        })
+    </script>
+
+</html>
