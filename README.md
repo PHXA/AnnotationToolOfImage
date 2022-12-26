@@ -1,3 +1,6 @@
+
+<img width="1209" alt="scs" src="https://user-images.githubusercontent.com/69100913/209538508-18c691f4-6b30-4ab6-a2ae-064eb67dc13a.png">
+
 # 概要(Summary)
 
 Flaskによるアノテーションツールです。
@@ -48,7 +51,7 @@ saveはバウンディングボックスとラベルの情報をサーバに送�
 
 Resetは画面のバウンディングボックスをすべて削除します。
 
-Ctl + Arrowleftを押下時に前のページに遷移します。Ctl + ArrowRightを押下時に次のページに遷移します。
+Ctr + Arrowleftを押下時に前のページに遷移します。Ctr + ArrowRightを押下時に次のページに遷移します。Ctr + zを押下時にひとつ前のバウンディングボックスを削除します。
 
 ⇦は前のページに遷移します。⇨は次のページに遷移します。
 

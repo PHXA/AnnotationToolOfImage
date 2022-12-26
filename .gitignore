@@ -1,4 +1,5 @@
-.vscode
-datasets/
-annotations/
-.env
+*
+!.env.example
+!.gitignore
+!README.md
+!server.py
