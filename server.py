@@ -72,4 +72,9 @@ def getImg():
     return jsonify(data)
 
 if __name__ == "__main__":
-    app.run(debug=True,port=8001)
+    with open(".env") as f:
+        env = {i.split("=")[0].strip():i.split("=")[1].replace('"','').replace("'",'').strip() for i in f.read().strip().split("\n") if i}
+    link = env["HOST"].split("/")[2]
+    h = link.split(":")[0]
+    p = link.split(":")[1]
+    app.run(debug=True,host=h,port=p)
